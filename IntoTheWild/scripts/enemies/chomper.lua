@@ -159,6 +159,27 @@ function this:init(mod)
 		}
 	}
 	
+	local bonusDamageTable = {
+		Passive_FriendlyFire = 1,
+		Passive_FriendlyFire_A = 2,
+		Passive_FriendlyFire_B = 2,
+		Passive_FriendlyFire_AB = 3
+	}
+	
+	local function getBonusDamage(casterLoc, targetLoc)
+		local bonusDamage = 0
+		
+		if Board:IsPawnTeam(casterLoc, TEAM_ENEMY) and Board:IsPawnTeam(targetLoc, TEAM_ENEMY) then
+			for i, damage in pairs(bonusDamageTable) do
+				if IsPassiveSkill(i) then
+					bonusDamage = math.max(bonusDamage, damage)
+				end
+			end
+		end
+		
+		return bonusDamage
+	end
+	
 	function lmn_ChomperAtk1:GetSkillEffect(p1, p2)
 		local ret = SkillEffect()
 		local dir = GetDirection(p2 - p1)
@@ -188,7 +209,8 @@ function this:init(mod)
 			ret:AddQueuedDelay(0.25)
 			ret:AddQueuedCharge(Board:GetSimplePath(target, adjacent), FULL_DELAY)
 			
-			local d = SpaceDamage(adjacent, self.Damage)
+			local damage = math.min(DAMAGE_DEATH, self.Damage + getBonusDamage(p1, target))
+			local d = SpaceDamage(adjacent, damage)
 			d.sSound = "/weapons/charge_impact"
 			d.sAnimation = self.Anim_Impact .. dir
 			ret:AddQueuedMelee(p1, d, NO_DELAY)
